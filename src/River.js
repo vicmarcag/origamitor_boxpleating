@@ -70,7 +70,34 @@ class River {
         for (let i = 0; i < this.grid.getN(); i++) {
             for (let j = 0; j < this.grid.getN(); j++) {
                 if (this.matrix[i][j] == 1){
+                    noStroke();
                     rect(this.myL*i, this.myL*j, this.myL,this.myL);
+
+                    stroke(0);
+                    // Left edges
+                    if (i > 0) {
+                        if (this.matrix[i-1][j] == 0) {
+                            line(this.myL*i, this.myL*j, this.myL*i, this.myL*(j+1));
+                        }
+                    }
+                    // Right edges
+                    if (i < this.grid.getN()-1) {
+                        if (this.matrix[i+1][j] == 0) {
+                            line(this.myL*(i+1), this.myL*j, this.myL*(i+1), this.myL*(j+1));
+                        }
+                    }
+                    // Top edges
+                    if (j > 0) {
+                        if (this.matrix[i][j-1] == 0) {
+                            line(this.myL*i, this.myL*j, this.myL*(i+1), this.myL*j);
+                        }
+                    }
+                    // Right edges
+                    if (j < this.grid.getN()-1) {
+                        if (this.matrix[i][j+1] == 0) {
+                            line(this.myL*i, this.myL*(j+1), this.myL*(i+1), this.myL*(j+1));
+                        }
+                    }
                 }
             }
         }

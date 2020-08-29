@@ -11,11 +11,47 @@ class BoxPacking {
         this.grid = new Grid(1);
     }
 
+    /**
+     * This function reads a JSON string, parses it and reads it into a BoxPacking object
+     * @param {*} jsonStr   The object serialized as JSON. 
+     */
+    fromJson(jsonStr) {
+        // Parse (some bug makes me to parse it twice)
+        let parsed = JSON.parse(jsonStr);
+        // Init selections
+        this.selected = [];
+        this.selectedRiver = [];
+        // Grid
+        this.grid = new Grid(parsed.grid.N);
+        // Boxes
+        this.polygons = [];
+        for (let p of parsed.polygons) {
+            let b = new Box(p.cx, p.cy, 1)
+            b.rw = p.rw;
+            b.rh = p.rh;
+            this.polygons.push(b);
+        }
+        // Rivers
+        this.rivers = [];
+        for (let r of parsed.rivers) {
+            let tempR = new River(this.grid);
+            tempR.matrix = r.matrix;
+            this.rivers.push(tempR);
+        }
+    }
+
+    /**
+     * This function creates a new river.
+     */
     newRiver() {
         this.rivers.push(new River(this.grid));
         return this.rivers.length-1;
     }
 
+    /**
+     * This function deletes a river
+     * @param {*} idx Index of the river to delete
+     */
     deleteRiver(idx) {
         if (this.rivers.length > 0) {
             this.rivers.splice(idx, 1);
@@ -134,6 +170,15 @@ class BoxPacking {
             }
             this.selected = [];
         }
+        if (this.selectedRiver.length > 0) {
+            // First: descent sort of the indexes
+            this.selectedRiver.sort(function(a, b) { return b-a; });
+            // Remove them from the array
+            for (let i = 0; i < this.selectedRiver.length; i++) {
+                this.rivers.splice(this.selectedRiver[i],1);
+            }
+            this.selectedRiver = [];
+        }
     }
 
     /**
@@ -170,6 +215,10 @@ class BoxPacking {
         }
     }
 
+    isOutsideCanvas(x, y) {
+        return x < 0 || y < 0 || x > size || y > size;
+    }
+
     /**
      * This function detects if the position (x,y) falls inside any polygon.
      * @param {*} x Coordinate X
@@ -178,19 +227,23 @@ class BoxPacking {
      */
     detectInside(x, y) {
         let collisionIdx = -1;
-        for (let i of this.polygons) {
-            if (i.isInside(x, y)) {
-                collisionIdx = this.polygons.indexOf(i);
-            } 
+        if (!this.isOutsideCanvas(x, y)) {
+            for (let i of this.polygons) {
+                if (i.isInside(x, y)) {
+                    collisionIdx = this.polygons.indexOf(i);
+                } 
+            }
         }
         return collisionIdx;
     }
     detectInsideRiver(x, y) {
         let collisionIdx = -1;
-        for (let i of this.rivers) {
-            if (i.isInside(x, y)) {
-                collisionIdx = this.rivers.indexOf(i);
-            } 
+        if (!this.isOutsideCanvas(x, y)) {
+            for (let i of this.rivers) {
+                if (i.isInside(x, y)) {
+                    collisionIdx = this.rivers.indexOf(i);
+                } 
+            }
         }
         return collisionIdx;
     }
@@ -206,12 +259,14 @@ class BoxPacking {
         let precision = 5;
         let collisionIdx = -1;
         let edge = -1;
-        for (let i of this.polygons) {
-            var isEdge = i.isEdge(x, y, precision);
-            if (isEdge >= 0) {
-                collisionIdx = this.polygons.indexOf(i);
-                edge = isEdge;
-            } 
+        if (!this.isOutsideCanvas(x, y)) {
+            for (let i of this.polygons) {
+                var isEdge = i.isEdge(x, y, precision);
+                if (isEdge >= 0) {
+                    collisionIdx = this.polygons.indexOf(i);
+                    edge = isEdge;
+                } 
+            }
         }
         return [collisionIdx, edge];
     }

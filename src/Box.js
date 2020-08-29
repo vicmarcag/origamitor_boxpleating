@@ -18,7 +18,7 @@ class Box {
         // State
         this.isBeingDragged = false;
     }
-
+    
     /**
      * Color setter
      * @param {*} color Color in hexadecimal format.

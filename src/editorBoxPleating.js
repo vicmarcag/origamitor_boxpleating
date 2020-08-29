@@ -18,18 +18,21 @@ let lockedHeight = -1;
 let lockedWidth = -1;
 let isDragged = false;
 let isCreatingRiver = false;
-let cp;
+let cp, cnv, cpName;
 let sliderPrevValue = -1;
 let canvas, canvasId;
 let currentRiverIdx = null;
 let lockedRiverIdx = -1;
+let offsetTop = 70;
+
 function setup() {
     cnv = createCanvas(size, size);
+    cnv.position(0, offsetTop);
     canvasId = cnv.id();
     canvas = document.getElementById(canvasId);
-
     cp = new BoxPacking();
 
+    // Colors
     paperColor = componentToHex(paperColor);
     circleColor = componentToHex(circleColor);
     highlightColor = componentToHex(highlightColor);
@@ -40,36 +43,60 @@ function setup() {
 
     // GUI
     let _x = 10;
+    labelTop = createElement('h3', 'Crease Pattern name: ');
+    labelTop.position(_x, 0);
+    cpName = createInput('Sample CP');
+    cpName.position(200, 20);
+    cpName.size(450);
+
+    _x = 10;
     buttonCreate = createButton("New Box");
     buttonCreate.mousePressed(createBox);
-    buttonCreate.position(_x, size+50);
+    buttonCreate.position(_x, offsetTop+size+50);
     buttonCreate.size(GUI_SPACING*0.8)
     _x += GUI_SPACING;
     buttonDelete = createButton("Delete Selected");
     buttonDelete.mousePressed(deleteSelected);
-    buttonDelete.position(_x, size+50);
+    buttonDelete.position(_x, offsetTop+size+50);
     buttonDelete.size(GUI_SPACING*0.8)
     _x += GUI_SPACING;
     buttonGrow = createButton("Grow polygons");
     buttonGrow.mousePressed(growPolygons);
-    buttonGrow.position(_x, size+50);
+    buttonGrow.position(_x, offsetTop+size+50);
     buttonGrow.size(GUI_SPACING*0.8)
     _x += GUI_SPACING;
     buttonRiver = createCheckbox("Creating river");
     buttonRiver.changed(createRiver);
-    buttonRiver.position(_x, size+50);
+    buttonRiver.position(_x, offsetTop+size+50);
     buttonRiver.size(GUI_SPACING*0.8)
     _x += GUI_SPACING;
 
     _x = 10;
     sliderGrid = createSlider(1, MAX_GRID, 12, 1);
-    sliderGrid.position(_x, size+100);
+    sliderGrid.position(_x, offsetTop+size+100);
     sliderGrid.size(GUI_SPACING*1.8);
     gridDisplay = createInput('1');
     _x += GUI_SPACING*2;
-    gridDisplay.position(_x, size+100);
+    gridDisplay.position(_x, offsetTop+size+100);
     gridDisplay.size(GUI_SPACING*0.8)
     gridDisplay.input(gridDisplayInputChanged)
+
+    _x = 10;
+    buttonCreate = createButton("Take Snapshot");
+    buttonCreate.mousePressed(makeCapture);
+    buttonCreate.position(_x, offsetTop+size+150);
+    buttonCreate.size(GUI_SPACING*0.8)
+    _x += GUI_SPACING;
+    buttonCreate = createButton("Save CP");
+    buttonCreate.mousePressed(saveCP);
+    buttonCreate.position(_x, offsetTop+size+150);
+    buttonCreate.size(GUI_SPACING*0.8)
+    _x += GUI_SPACING;
+    loadcpP = createElement('p', 'Load CP:');
+    loadcpP.position(_x, offsetTop+size+120);
+    input = createFileInput(loadCP);
+    input.position(_x, offsetTop+size+160);
+    input.size(GUI_SPACING*2);
 }
 
 function draw() {
@@ -90,7 +117,7 @@ function createBox() {
     if (!isCreatingRiver){
         cp.newBox(size/2, size/2);
         cp.selected = [];
-        cp.selectRiver = [];
+        cp.selectedRiver = [];
     } else {
         alert('Please, stop creating river before trying to do anything else.');
     }
@@ -121,15 +148,14 @@ function createRiver() {
     if (this.checked()) {
         isCreatingRiver = true;
         currentRiverIdx = cp.newRiver();
-        print(currentRiverIdx)
     } else {
         canvas.style.cursor = "default";
         isCreatingRiver = false;
         if (!cp.rivers[currentRiverIdx].isFeasible()) {
             alert('Created river is disjointed! Aborting...');
             cp.rivers.deleteRiver(currentRiverIdx);
-            currentRiverIdx = -1;
         }
+        currentRiverIdx = -1;
     }
 }
 
@@ -192,7 +218,7 @@ function mouseReleased() {
         if (!isDragged) {
             // Just a single click: selected
             cp.select(lockedIdx);
-            print('selected')
+            print('Box selected: ' + lockedIdx);
         }
         isDragged = false;
         cp.polygons[lockedIdx].isBeingDragged = false;
@@ -202,7 +228,8 @@ function mouseReleased() {
     // Rivers
     if (lockedRiverIdx != -1) {
         // Just a single click: selected
-        cp.selectRiver(lockedIdx);
+        cp.selectRiver(lockedRiverIdx);
+        print('River selected: ' + lockedRiverIdx);
         lockedRiverIdx = -1;   
     }
 
@@ -265,4 +292,31 @@ function gridDisplayInputChanged() {
         sliderGrid.value(typedValue);
         cp.changeGrid(typedValue);
     }
+}
+
+function loadCP(file) {
+    if (file.subtype != 'json') {
+        alert('Unsupported file type! (only supports .json format)');
+    } else {
+        // Split file.data and get the base64 string
+        let base64Str = file.data.split(",")[1];
+        // Parse the base64 string into a JSON string
+        let jsonStr = atob(base64Str);
+        // Parse the JSON object into a Javascript object
+        cp.fromJson(jsonStr);
+    }
+}
+
+function saveCP() {
+    if (cp.rivers.length > 0 && cp.polygons.length > 0) {
+        let name = cpName.value();
+        name = name.split(' ').join('_');
+        saveJSON(cp, name + '.json');
+    } else {
+        alert('Cannot save an empty CP!');
+    }
+}
+
+function makeCapture() {
+    saveCanvas(cnv, 'myCP', 'png');
 }
