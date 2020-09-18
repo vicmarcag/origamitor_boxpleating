@@ -9,6 +9,9 @@ class BoxPacking {
         this.rivers = [];
         this.selectedRiver = [];
         this.grid = new Grid(1);
+
+        // Computed CP lines
+        this.creasepattern = null;
     }
 
     /**
@@ -112,6 +115,35 @@ class BoxPacking {
                 p.show();
             }
         }
+    }
+
+    showLines() {
+        if (this.creasepattern != null) {
+            // Paper background
+            fill(paperColor);
+            rect(0, 0, size, size);
+
+            // Grid
+            this.grid.show();
+
+            // Paper border
+            strokeWeight(10);
+            stroke(0);
+            noFill();
+            rect(0, 0, size, size);
+
+            // Lines
+            this.creasepattern.show();
+        }
+    }
+
+    computeLines() {
+        let success = false;
+        if (this.polygons.length > 0 || this.rivers.length > 0) {
+            this.creasepattern = new CreasePattern(this.grid, this.polygons, this.rivers);
+            success = this.creasepattern.isFeasible();
+        }
+        return success;
     }
 
     /**
@@ -378,3 +410,16 @@ class BoxPacking {
     }
 }
 
+class Line {
+    constructor(a, b, color) {
+        this.a = a;
+        this.b = b;
+        this.color = color;
+    }
+
+    show() {
+        noFill();
+        stroke(this.color);
+        line(a.x, a.y, b.x, b.y);
+    }
+}

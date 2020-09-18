@@ -24,10 +24,10 @@ let canvas, canvasId;
 let currentRiverIdx = null;
 let lockedRiverIdx = -1;
 let offsetTop = 70;
-
+let showLines = false;
 function setup() {
     cnv = createCanvas(size, size);
-    cnv.position(0, offsetTop);
+    cnv.position(30, offsetTop);
     canvasId = cnv.id();
     canvas = document.getElementById(canvasId);
     cp = new BoxPacking();
@@ -79,7 +79,12 @@ function setup() {
     _x += GUI_SPACING*2;
     gridDisplay.position(_x, offsetTop+size+100);
     gridDisplay.size(GUI_SPACING*0.8)
-    gridDisplay.input(gridDisplayInputChanged)
+    gridDisplay.input(gridDisplayInputChanged);
+    _x += GUI_SPACING;
+    buttonRiver = createCheckbox("Hide/show crease lines");
+    buttonRiver.changed(hideShowLines);
+    buttonRiver.position(_x, offsetTop+size+100);
+    buttonRiver.size(GUI_SPACING*0.8);
 
     _x = 10;
     buttonCreate = createButton("Take Snapshot");
@@ -100,7 +105,14 @@ function setup() {
 }
 
 function draw() {
-    cp.show();
+    // CP lines or design view
+    if (showLines) {
+        cp.showLines();
+    } else {
+        cp.show();
+    }
+    
+    // Hovering or dragging?
     if (lockedIdx == -1) {
         checkMouseHover();
     }
@@ -153,7 +165,7 @@ function createRiver() {
         isCreatingRiver = false;
         if (!cp.rivers[currentRiverIdx].isFeasible()) {
             alert('Created river is disjointed! Aborting...');
-            cp.rivers.deleteRiver(currentRiverIdx);
+            cp.deleteRiver(currentRiverIdx);
         }
         currentRiverIdx = -1;
     }
@@ -238,6 +250,21 @@ function mouseReleased() {
     lockedHeight = -1;
 }
 
+function hideShowLines() {
+    if (this.checked()) {
+        let success = cp.computeLines();
+        if (success) {
+            showLines = true;
+        } else {
+            alert('Cannot compute the lines!');
+            showLines = false;
+        }
+        
+    } else {
+        showLines = false;
+    }
+}
+
 function checkMouseHover() {
     if (isCreatingRiver) {
         canvas.style.cursor = "cell";
@@ -304,11 +331,13 @@ function loadCP(file) {
         let jsonStr = atob(base64Str);
         // Parse the JSON object into a Javascript object
         cp.fromJson(jsonStr);
+        //sliderGrid.value(cp.grid.getN());
+        //gridDisplay.value(cp.grid.getN());
     }
 }
 
 function saveCP() {
-    if (cp.rivers.length > 0 && cp.polygons.length > 0) {
+    if (cp.rivers.length > 0 || cp.polygons.length > 0) {
         let name = cpName.value();
         name = name.split(' ').join('_');
         saveJSON(cp, name + '.json');

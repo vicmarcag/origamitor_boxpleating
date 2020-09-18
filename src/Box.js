@@ -179,6 +179,8 @@ class Box {
             this.rh = L;
         }
 
+        this.relativeRadius = Math.min(this.rw, this.rh) / L;
+        
         // Nearest grid point
         this.correctPositionUnderGrid(L);
     }

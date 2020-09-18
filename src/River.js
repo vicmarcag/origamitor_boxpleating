@@ -103,7 +103,67 @@ class River {
         }
     }
 
+    /**
+     * This function returns a boolean that indicates if the current river is feasible or not, which
+     * means that it would be disjointed.
+     */
     isFeasible() {
-        return true;
+        // Create trace matrix
+        var trace = [];
+        for (let i = 0; i < this.matrix.length; i++) {
+            trace[i] = this.matrix[i].slice();
+        }
+
+        // Find the initial point
+        let initI = -1;
+        let initJ = -1;
+        end_loop:
+        for (let i = 0; i < this.grid.getN(); i++) {
+            for (let j = 0; j < this.grid.getN(); j++) { 
+                if (this.matrix[i][j] == 1) {
+                    initI = i;
+                    initJ = j;
+                    break end_loop;
+                } 
+            }
+        }
+
+        // Flood fill 
+        if (initI != -1 && initJ != -1) {
+            this.floodFill(initI, initJ, trace);
+
+            // Check if there are remaining ones
+            let feasible = true;
+            end_loop:
+            for (let i = 0; i < this.grid.getN(); i++) {
+                for (let j = 0; j < this.grid.getN(); j++) { 
+                    if (trace[i][j] == 1) {
+                        feasible = false;
+                        break end_loop;
+                    } 
+                }
+            }
+            return feasible;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Recursive "flood fill" algorithm to detect if the river is disjointed.
+     * @param {*} i Row of the initial point to check.
+     * @param {*} j Column of the initial point to check.
+     * @param {*} trace Tracing matrix.
+     */
+    floodFill(i, j, trace) {
+        if (i > 0 && j > 0 && i < this.grid.getN() && j < this.grid.getN()) {
+            if (trace[i][j] == 1) {
+                trace[i][j] = 2;
+                this.floodFill(i-1 , j, trace);
+                this.floodFill(i+1 , j, trace);
+                this.floodFill(i , j-1, trace);
+                this.floodFill(i , j+1, trace);
+            }
+        }
     }
 }
